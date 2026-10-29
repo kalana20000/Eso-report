@@ -3,7 +3,7 @@ FROM python:3.11-slim
 # Prevent Python from writing .pyc files & enable unbuffered stdout
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PORT=5000
+ENV PORT=8080
 
 # Install system dependencies & Google Chrome
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -66,7 +66,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application source code
 COPY . /app/
 
-EXPOSE 5000
+EXPOSE 8080
 
 # Run Flask app (reads $PORT dynamically from cloud platform or defaults to 5000)
 CMD ["python", "app.py"]
