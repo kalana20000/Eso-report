@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}GeoRank SEO - Local Google Rank Tracker{% endblock %}
+{% block title %}GeoRank SEO - Local Google Rank Tracker (Multi-Page Deep Scan){% endblock %}
 
 {% block content %}
 <!-- Hero Banner -->
 <div class="hero-banner">
-    <div class="hero-tag">📍 Hyper-Local SEO Intelligence</div>
-    <div class="hero-title">Check Google Organic Rank for Any City & Country</div>
+    <div class="hero-tag">📍 Multi-Page SEO Intelligence</div>
+    <div class="hero-title">Check Google Organic Rank & Count Across All Pages</div>
     <div class="hero-desc">
-        Simulate exact localized Google searches using canonical UULE geo-targeting. Discover where your target website places in organic search without proxy contamination or cookie bias.
+        Scan beyond the top results. Inspect Page 1 through Page 10 to see if your target website appears anywhere in Google SERP with complete appearance counts and page placings.
     </div>
 </div>
 
@@ -23,7 +23,7 @@
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <span>Rank Check Parameters</span>
+                    <span>Multi-Page Scan Setup</span>
                 </div>
                 <span class="card-badge">POST /api/check</span>
             </div>
@@ -72,22 +72,21 @@
                     <div class="input-wrapper">
                         <span class="input-icon">🌐</span>
                         <input type="text" id="target_website" name="target_website" required
-                            placeholder="e.g. coffee.lk or yourdomain.com"
+                            placeholder="e.g. snippetsofwonders.com or coffee.lk"
                             class="form-input">
                     </div>
-                    <div class="form-help">Accepts root domain (coffee.lk), subdomain, or URL.</div>
+                    <div class="form-help">Scans all pages to find every occurrence of your domain.</div>
                 </div>
 
                 <!-- Search Depth & Country Code -->
                 <div class="form-row form-group">
                     <div>
-                        <label class="form-label" for="max_results">Search Depth</label>
+                        <label class="form-label" for="max_results">Scan Depth (Pages)</label>
                         <select id="max_results" name="max_results" class="form-input form-input-plain">
                             <option value="10">Top 10 (Page 1)</option>
-                            <option value="20">Top 20 (Page 1-2)</option>
-                            <option value="30" selected>Top 30 (Page 1-3)</option>
-                            <option value="50">Top 50 (Page 1-5)</option>
-                            <option value="100">Top 100 (Deep Scan)</option>
+                            <option value="30">Top 30 (Pages 1-3)</option>
+                            <option value="50" selected>Top 50 (Pages 1-5)</option>
+                            <option value="100">Top 100 (Deep Scan: Pages 1-10)</option>
                         </select>
                     </div>
                     <div>
@@ -106,7 +105,7 @@
                         <line x1="12" y1="6" x2="12" y2="2"></line>
                         <line x1="12" y1="22" x2="12" y2="18"></line>
                     </svg>
-                    <span>Check Google Placing</span>
+                    <span>Scan All Pages for Target</span>
                 </button>
             </form>
 
@@ -115,18 +114,18 @@
                 <div class="spinner"></div>
                 <div>
                     <div class="status-title" id="statusTitle">Connecting to Google Search...</div>
-                    <div class="status-desc" id="statusDesc">Encoding canonical location & launching stealth browser</div>
+                    <div class="status-desc" id="statusDesc">Iterating through Google SERP pages...</div>
                 </div>
             </div>
         </div>
 
         <!-- Help Info Box -->
         <div class="info-box">
-            <div class="info-title">💡 How Geo-Rank Tracking Works</div>
+            <div class="info-title">💡 Deep Scan & Occurrence Count</div>
             <ul class="info-list">
-                <li><strong>UULE Emulation:</strong> Encodes target city/region to Google's official canonical coordinates.</li>
-                <li><strong>Zero Proxy Skew:</strong> Real organic placings without VPN or personalized history.</li>
-                <li><strong>Audit History:</strong> Every search is recorded to SQLite and exportable to CSV/JSON.</li>
+                <li><strong>Multi-Page Crawling:</strong> Pages through Google results (Page 1, 2, 3...) to discover rankings outside Top 10.</li>
+                <li><strong>Total Appearance Count:</strong> If your domain ranks with multiple URLs or sitelinks, all occurrences are captured.</li>
+                <li><strong>Audit History:</strong> Recorded to SQLite and exportable to CSV/JSON.</li>
             </ul>
         </div>
     </div>
@@ -136,10 +135,10 @@
         
         <!-- Welcome Empty State -->
         <div id="emptyState" class="empty-state">
-            <div class="empty-icon">🏆</div>
-            <div class="empty-title">Ready to Check Google Rankings</div>
+            <div class="empty-icon">🔎</div>
+            <div class="empty-title">Multi-Page SERP Scanner Ready</div>
             <div class="empty-desc">
-                Enter your keyword, location, and target website on the left to extract the live SERP placing and inspect competitor rankings.
+                Select your scan depth (up to Top 100 across 10 pages) to discover if and where your target website appears in Google search.
             </div>
             <button onclick="demoFill()" class="btn-secondary" style="margin: 0 auto; padding: 8px 16px;">
                 ⚡ Load Quick Demo (Coffee in Colombo)
@@ -157,9 +156,9 @@
             <div class="table-card">
                 <div class="table-header-bar">
                     <div>
-                        <div style="font-size: 15px; font-weight: 800; color: #0f172a;">📊 Local SERP Breakdown</div>
+                        <div style="font-size: 15px; font-weight: 800; color: #0f172a;">📊 Complete SERP Placings Across All Pages</div>
                         <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;" id="serpMetaInfo">
-                            Top organic rankings in this location
+                            All organic results extracted
                         </div>
                     </div>
 
@@ -176,7 +175,7 @@
 
                 <!-- Table Search Filter -->
                 <div class="table-filter-bar">
-                    <input type="text" id="tableFilter" oninput="filterTable()" placeholder="🔍 Filter results by domain, keyword, or title..." class="filter-input">
+                    <input type="text" id="tableFilter" oninput="filterTable()" placeholder="🔍 Filter results across all pages by domain, keyword, or title..." class="filter-input">
                 </div>
 
                 <!-- Table Content -->
@@ -184,7 +183,8 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 70px; text-align: center;">Rank</th>
+                                <th style="width: 60px; text-align: center;">Rank</th>
+                                <th style="width: 60px; text-align: center;">Page</th>
                                 <th>Title & Snippet</th>
                                 <th style="width: 220px;">Domain / URL</th>
                             </tr>
@@ -204,7 +204,7 @@
 <div class="card" style="margin-top: 10px;">
     <div class="card-header">
         <div>
-            <div class="card-title">🕒 Recent Rank Checks</div>
+            <div class="card-title">🕒 Recent Rank Checks & Audits</div>
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Stored in local SQLite database for historical ranking audits</div>
         </div>
         <button onclick="refreshHistory()" class="btn-secondary">
@@ -216,12 +216,13 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 150px;">Date</th>
+                    <th style="width: 140px;">Date</th>
                     <th>Keyword</th>
                     <th>Location</th>
                     <th>Target</th>
-                    <th style="width: 120px; text-align: center;">Rank</th>
-                    <th style="width: 100px; text-align: right;">Actions</th>
+                    <th style="width: 140px; text-align: center;">Best Rank</th>
+                    <th style="width: 110px; text-align: center;">Total Count</th>
+                    <th style="width: 80px; text-align: right;">Actions</th>
                 </tr>
             </thead>
             <tbody id="historyTableBody">
@@ -239,6 +240,15 @@
                                 <span class="history-badge not-found">Not in Top {{ item.total_extracted }}</span>
                             {% endif %}
                         </td>
+                        <td style="text-align: center;">
+                            {% if item.target_found %}
+                                <span style="font-weight: 800; color: var(--emerald-dark); background: var(--emerald-light); padding: 2px 8px; border-radius: 9999px; border: 1px solid var(--emerald-border);">
+                                    {{ item.appearances_count }} match{{ 'es' if item.appearances_count != 1 else '' }}
+                                </span>
+                            {% else %}
+                                <span style="color: var(--text-muted);">0</span>
+                            {% endif %}
+                        </td>
                         <td style="text-align: right;">
                             <button onclick="loadCheck({{ item.id }})" class="action-btn view">View</button>
                             <button onclick="deleteCheck({{ item.id }})" class="action-btn delete">✕</button>
@@ -247,7 +257,7 @@
                     {% endfor %}
                 {% else %}
                     <tr id="emptyHistoryRow">
-                        <td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted);">
+                        <td colspan="7" style="padding: 24px; text-align: center; color: var(--text-muted);">
                             No rank checks recorded yet. Run your first search above!
                         </td>
                     </tr>
@@ -272,7 +282,7 @@
         document.getElementById('location').value = 'Colombo, Sri Lanka';
         document.getElementById('target_website').value = 'snippetsofwonders.com';
         document.getElementById('country_code').value = 'lk';
-        document.getElementById('max_results').value = '30';
+        document.getElementById('max_results').value = '50';
     }
 
     document.getElementById('rankForm').addEventListener('submit', async function(e) {
@@ -293,11 +303,11 @@
         const statusBox = document.getElementById('statusBox');
 
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>⏳ Searching Google SERP...</span>';
+        submitBtn.innerHTML = '<span>⏳ Deep Scanning Google SERP Pages...</span>';
 
         statusBox.classList.remove('hidden');
-        document.getElementById('statusTitle').innerText = 'Querying Google (' + location + ')...';
-        document.getElementById('statusDesc').innerText = 'Simulating geo-location & parsing organic results...';
+        document.getElementById('statusTitle').innerText = 'Scanning Google SERP (' + location + ')...';
+        document.getElementById('statusDesc').innerText = 'Paging through results up to Top ' + maxResults + ' to detect all appearances...';
 
         try {
             const resp = await fetch('/api/check', {
@@ -333,7 +343,7 @@
                     <line x1="12" y1="6" x2="12" y2="2"></line>
                     <line x1="12" y1="22" x2="12" y2="18"></line>
                 </svg>
-                <span>Check Google Placing</span>
+                <span>Scan All Pages for Target</span>
             `;
             statusBox.classList.add('hidden');
         }
@@ -357,42 +367,74 @@
 
         // Render Hero Rank Banner
         const banner = document.getElementById('rankBanner');
+        const count = data.appearances_count || (data.target_found ? 1 : 0);
+        const apps = data.all_appearances || (data.matched_item ? [data.matched_item] : []);
+
         if (data.target_found && data.rank) {
             banner.className = 'result-banner found';
+            
+            let appearancesHtml = '';
+            if (apps.length > 1) {
+                appearancesHtml = `
+                    <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.25);">
+                        <div style="font-weight: 800; font-size: 13px; margin-bottom: 6px;">
+                            📋 All ${count} Detected Appearances Across Results:
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            ${apps.map((a, i) => `
+                                <div style="background: rgba(255,255,255,0.15); padding: 6px 10px; border-radius: 6px; font-size: 11px;">
+                                    <strong>#${a.rank}</strong> (Page ${a.page}): 
+                                    <a href="${a.url}" target="_blank" style="color: #fff; text-decoration: underline; font-weight: 600;">${a.title}</a>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (data.matched_item) {
+                appearancesHtml = `
+                    <div class="matched-details">
+                        <div><strong>Matched Page:</strong> <a href="${data.matched_item.url}" target="_blank" class="matched-url-link">${data.matched_item.url}</a></div>
+                        <div style="opacity: 0.9; margin-top: 3px;">"${data.matched_item.title}"</div>
+                    </div>
+                `;
+            }
+
             banner.innerHTML = `
-                <div class="result-tag">🎉 Organic Match Found</div>
-                <div class="result-rank-row">
-                    <span class="result-rank-num">Rank #${data.rank}</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div class="result-tag">🎉 Target Found: ${count} Appearance${count > 1 ? 's' : ''}</div>
+                    <span style="font-size: 11px; background: rgba(0,0,0,0.2); padding: 3px 8px; border-radius: 4px;">
+                        Scanned ${data.total_extracted} results in ${data.duration_seconds}s
+                    </span>
+                </div>
+
+                <div class="result-rank-row" style="margin-top: 8px;">
+                    <span class="result-rank-num">Best Rank #${data.rank}</span>
                     <span class="result-rank-page">Page ${data.page} on Google</span>
                 </div>
+
                 <div class="result-summary-text">
-                    Target <strong>${data.target_website}</strong> places at position #${data.rank} for "<em>${data.keyword}</em>" in <strong>${data.location}</strong>.
-                    Parsed ${data.total_extracted} results in ${data.duration_seconds}s.
+                    Target <strong>${data.target_website}</strong> appears <strong>${count} time${count > 1 ? 's' : ''}</strong> across ${data.total_extracted} organic placings scanned for "<em>${data.keyword}</em>" in <strong>${data.location}</strong>.
                 </div>
-                ${data.matched_item ? `
-                <div class="matched-details">
-                    <div><strong>Matched Page:</strong> <a href="${data.matched_item.url}" target="_blank" class="matched-url-link">${data.matched_item.url}</a></div>
-                    <div style="opacity: 0.9; margin-top: 3px;">"${data.matched_item.title}"</div>
-                </div>
-                ` : ''}
+
+                ${appearancesHtml}
             `;
         } else {
             banner.className = 'result-banner not-found';
             banner.innerHTML = `
-                <div class="result-tag">⚠️ Not Found in Target Depth</div>
+                <div class="result-tag">⚠️ Target Not Found Anywhere</div>
                 <div class="result-rank-row">
-                    <span class="result-rank-num">Not Found</span>
-                    <span class="result-rank-page">Top ${data.total_extracted} Results</span>
+                    <span class="result-rank-num">0 Matches</span>
+                    <span class="result-rank-page">Scanned ${data.total_extracted} Results</span>
                 </div>
                 <div class="result-summary-text">
-                    Target <strong>${data.target_website}</strong> was not found in the top ${data.total_extracted} organic placings for "<em>${data.keyword}</em>" in <strong>${data.location}</strong>.
+                    Target <strong>${data.target_website}</strong> did not appear anywhere in all ${data.total_extracted} organic placings scanned for "<em>${data.keyword}</em>" in <strong>${data.location}</strong>.
                     (Scanned in ${data.duration_seconds}s)
                 </div>
             `;
         }
 
         document.getElementById('serpMetaInfo').innerText = 
-            `Showing ${data.results.length} organic placings for "${data.keyword}" in ${data.location}`;
+            `Showing all ${data.results.length} organic placings across pages for "${data.keyword}" in ${data.location}`;
 
         renderTable(currentResults);
         container.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -403,7 +445,7 @@
         tbody.innerHTML = '';
 
         if (!results || results.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="padding: 24px; text-align: center; color: var(--text-muted);">No organic results returned.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="padding: 24px; text-align: center; color: var(--text-muted);">No organic results returned.</td></tr>';
             return;
         }
 
@@ -419,10 +461,13 @@
                         ${item.is_target ? item.rank : '#' + item.rank}
                     </span>
                 </td>
+                <td style="text-align: center; font-weight: 700; color: var(--text-sub);">
+                    P${item.page}
+                </td>
                 <td>
                     <div class="result-title">
                         ${item.title}
-                        ${item.is_target ? '<span class="target-tag">🎯 Your Website</span>' : ''}
+                        ${item.is_target ? '<span class="target-tag">🎯 Target Match</span>' : ''}
                     </div>
                     ${item.snippet ? `<div class="result-snippet">${item.snippet}</div>` : ''}
                 </td>
@@ -491,12 +536,13 @@
             if (data.success && data.history) {
                 const tbody = document.getElementById('historyTableBody');
                 if (data.history.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted);">No rank checks recorded yet.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="padding: 24px; text-align: center; color: var(--text-muted);">No rank checks recorded yet.</td></tr>';
                     return;
                 }
                 tbody.innerHTML = '';
                 data.history.forEach(item => {
                     const tr = document.createElement('tr');
+                    const count = item.appearances_count || (item.target_found ? 1 : 0);
                     tr.innerHTML = `
                         <td style="color: var(--text-muted); font-family: monospace;">${item.created_at}</td>
                         <td style="font-weight: 700;">${item.keyword}</td>
@@ -507,6 +553,15 @@
                                 <span class="history-badge found">#${item.rank} (Page ${item.page})</span>
                             ` : `
                                 <span class="history-badge not-found">Not in Top ${item.total_extracted}</span>
+                            `}
+                        </td>
+                        <td style="text-align: center;">
+                            ${item.target_found ? `
+                                <span style="font-weight: 800; color: var(--emerald-dark); background: var(--emerald-light); padding: 2px 8px; border-radius: 9999px; border: 1px solid var(--emerald-border);">
+                                    ${count} match${count != 1 ? 'es' : ''}
+                                </span>
+                            ` : `
+                                <span style="color: var(--text-muted);">0</span>
                             `}
                         </td>
                         <td style="text-align: right;">

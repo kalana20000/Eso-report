@@ -7,8 +7,10 @@ A lightweight, powerful Python **Flask** web application and CLI tool designed f
 ## 🌟 Key Features
 
 - **Hyper-Local Location Emulation (UULE + `gl`):** Uses Google's canonical coordinate encoding to simulate searches from any city or country (e.g. `Colombo, Sri Lanka`, `Austin, Texas, United States`, `London, UK`) without requiring expensive residential proxies or suffering VPN IP blocks.
+- **Multi-Page Deep Scanning (Beyond Top 9):** Automatically pages through Google SERPs (Page 1, 2, 3, up to 10 pages / 100 results) to find your target website wherever it appears.
+- **Complete Occurrence Count:** If your domain ranks with multiple pages, subdomains, or blog posts, GeoRank tracks the total count and lists every ranking URL with its exact rank and page number.
 - **Flask Architecture:** Clean, lightweight Flask web server with RESTful API endpoints and a responsive, modern dashboard.
-- **Exact Rank & Page Detection:** Identifies the precise organic placing (`#1`, `#3`, etc.) and the SERP page number (Page 1, Page 2).
+- **Exact Rank & Page Detection:** Identifies the precise organic placing (`#1`, `#14`, `#35`) and the SERP page number (Page 1, Page 2...).
 - **Flexible Domain Matching:** Supports root domains (`coffee.lk`), subdomains (`shop.coffee.lk`), full URLs, or brand names.
 - **Redirect Resolution:** Automatically unwinds modern Google redirect URLs (`/goto?url=...` or `/url?q=...`) to identify the final destination URL.
 - **SERP Competitor Breakdown:** Displays the entire Top 10 to Top 100 competitor search engine results page with titles, snippets, and domains.

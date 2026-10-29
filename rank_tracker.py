@@ -1,8 +1,9 @@
 import base64
+import math
 import re
 import time
 import urllib.parse
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 import requests
 
 from selenium import webdriver
@@ -10,7 +11,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
 
-# Country name to ISO-3166 2-letter country code mapping for Google 'gl' parameter
 COUNTRY_GL_MAP = {
     "united states": "us",
     "usa": "us",
@@ -45,13 +45,7 @@ COUNTRY_GL_MAP = {
 
 
 def generate_uule(location_name: str) -> str:
-    """
-    Generates a Google UULE parameter from a location string.
-    Google uses UULE to emulate localized search results without a proxy.
-    
-    Format:
-    w+CAIQICI + <secret_length_key> + base64(<canonical_location>)
-    """
+    """Generates Google UULE location emulation parameter."""
     secret_key = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
     location_clean = location_name.strip()
     if not location_clean:
@@ -68,15 +62,11 @@ def generate_uule(location_name: str) -> str:
 
 
 def detect_country_code(location_name: str) -> str:
-    """
-    Attempts to detect the two-letter ISO country code (gl) from location string.
-    Defaults to 'us' if unknown.
-    """
+    """Detects 2-letter ISO country code from location name."""
     loc_lower = location_name.lower()
     for country, gl in COUNTRY_GL_MAP.items():
         if country in loc_lower:
             return gl
-    # Check if last token is a 2-letter country code
     parts = [p.strip() for p in loc_lower.split(",")]
     if parts and len(parts[-1]) == 2:
         return parts[-1]
@@ -84,11 +74,7 @@ def detect_country_code(location_name: str) -> str:
 
 
 def normalize_domain(url_or_domain: str) -> str:
-    """
-    Normalizes domain/URL for comparison by stripping protocol, 'www.',
-    port, path, query parameters, and trailing slashes.
-    Example: 'https://www.example.com/blog/' -> 'example.com'
-    """
+    """Strips protocol, www, port, and paths for clean domain matching."""
     text = url_or_domain.strip().lower()
     text = re.sub(r"^https?://", "", text)
     text = re.sub(r"^www\.", "", text)
@@ -97,13 +83,10 @@ def normalize_domain(url_or_domain: str) -> str:
 
 
 def resolve_real_url(url: str) -> str:
-    """
-    Resolves Google redirect URLs (/goto?url=... or /url?q=...) to final destinations.
-    """
+    """Resolves Google /goto or /url redirects to actual target URLs."""
     if not url:
         return ""
     
-    # Check if it is a Google redirect
     if "google.com/goto?url=" in url or "/goto?url=" in url:
         try:
             full_url = url if url.startswith("http") else f"https://www.google.com{url}"
@@ -127,19 +110,16 @@ def resolve_real_url(url: str) -> str:
 
 
 def is_target_match(target: str, result_url: str, result_display: str) -> bool:
-    """
-    Checks if a search result matches the target website/domain.
-    Supports root domains, subdomains, or exact URLs.
-    """
+    """Checks if a search result matches the target website/domain."""
     target_clean = normalize_domain(target)
     url_domain = normalize_domain(result_url)
     display_domain = normalize_domain(result_display)
     
-    # 1. Exact domain or subdomain match
+    # 1. Root domain or subdomain match
     if target_clean in url_domain or target_clean in display_domain:
         return True
     
-    # 2. Check if target is a substring of the raw display text or URL
+    # 2. Substring match for target name
     if target.strip().lower() in result_url.lower() or target.strip().lower() in result_display.lower():
         return True
         
@@ -147,10 +127,6 @@ def is_target_match(target: str, result_url: str, result_display: str) -> bool:
 
 
 class GoogleRankTracker:
-    """
-    SEO Rank Tracker that queries Google Search with location emulation (UULE + gl)
-    using a stealth headless browser to extract real organic placings.
-    """
     def __init__(self, headless: bool = True):
         self.headless = headless
 
@@ -163,7 +139,7 @@ class GoogleRankTracker:
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--window-size=1920,1080")
         
-        # Anti-bot detection flags
+        # Anti-detection flags
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option("useAutomationExtension", False)
@@ -173,7 +149,6 @@ class GoogleRankTracker:
         )
         
         driver = webdriver.Chrome(options=options)
-        # Patch navigator.webdriver via Chrome DevTools Protocol
         try:
             driver.execute_cdp_cmd(
                 "Page.addScriptToEvaluateOnNewDocument",
@@ -189,139 +164,150 @@ class GoogleRankTracker:
         keyword: str,
         location: str,
         target_website: str,
-        max_results: int = 30,
+        max_results: int = 50,
         country_code: Optional[str] = None,
         language: str = "en"
     ) -> Dict:
         """
-        Executes Google search for keyword localized to `location` and finds `target_website` placing.
+        Performs multi-page localized Google SERP scan.
+        Scans across all pages (Page 1, 2, 3...) up to max_results,
+        capturing ALL occurrences and count of target_website.
         """
         start_time = time.time()
         
-        # Resolve location parameters
         uule = generate_uule(location) if location else ""
         gl = country_code.lower() if country_code else detect_country_code(location)
         
-        # Build search query URL
-        params = {
-            "q": keyword,
-            "hl": language,
-            "gl": gl,
-            "num": min(max(max_results, 10), 100),
-        }
-        if uule:
-            params["uule"] = uule
-
-        search_url = f"https://www.google.com/search?{urllib.parse.urlencode(params)}"
-        
         driver = None
         extracted_results: List[Dict] = []
-        target_found = False
-        target_rank = None
-        matched_item = None
+        all_target_matches: List[Dict] = []
+        seen_identifiers = set()
+        
+        # Compute how many Google pages to visit (each page usually has ~10 organic results)
+        pages_to_crawl = max(1, math.ceil(max_results / 10))
+        # Cap at 10 pages (top 100) to keep execution fast and prevent bot blocks
+        pages_to_crawl = min(pages_to_crawl, 10)
+        
+        rank_counter = 1
         
         try:
             driver = self._create_driver()
             driver.set_page_load_timeout(15)
-            try:
-                driver.get(search_url)
-            except Exception:
-                try:
-                    driver.execute_script("window.stop();")
-                except Exception:
-                    pass
-            time.sleep(1.5)
             
-            # Dismiss cookie consent if shown
-            consent_buttons = driver.find_elements(
-                By.XPATH,
-                "//button[contains(., 'Accept all') or contains(., 'I agree') or contains(., 'Accept')]"
-            )
-            if consent_buttons:
-                try:
-                    consent_buttons[0].click()
-                    time.sleep(1)
-                except Exception:
-                    pass
-
-            # Scroll down to load extra organic items if continuous scroll is active
-            for _ in range(3):
-                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(1)
-
-            # Locate organic search result cards
-            # Modern Google uses containers like div.tF2Cxc, div.MjjYud, div.g
-            containers = driver.find_elements(
-                By.CSS_SELECTOR,
-                "div.tF2Cxc, div.MjjYud div.yuRUbf, div.g, div[data-sokoban-container]"
-            )
-            
-            seen_titles = set()
-            rank_counter = 1
-            
-            for c in containers:
+            for page_idx in range(pages_to_crawl):
                 if rank_counter > max_results:
                     break
                     
-                try:
-                    # Extract title
-                    h3_elements = c.find_elements(By.TAG_NAME, "h3")
-                    if not h3_elements:
-                        continue
-                    title = h3_elements[0].text.strip()
-                    if not title or title in seen_titles:
-                        continue
-                    seen_titles.add(title)
-                    
-                    # Extract display cite / snippet
-                    cite_elements = c.find_elements(By.TAG_NAME, "cite")
-                    display_url = cite_elements[0].text.strip() if cite_elements else ""
-                    
-                    # Extract link
-                    a_elements = c.find_elements(By.TAG_NAME, "a")
-                    raw_href = a_elements[0].get_attribute("href") if a_elements else ""
-                    
-                    # Extract snippet / description text
-                    snippet = ""
-                    snippet_elems = c.find_elements(
-                        By.CSS_SELECTOR,
-                        "div.VwiC3b, div[data-sncf], span.aCOpRe"
-                    )
-                    if snippet_elems:
-                        snippet = snippet_elems[0].text.strip()
-                        
-                    # Check match against target_website
-                    is_match = is_target_match(target_website, raw_href, display_url)
-                    
-                    real_url = raw_href
-                    if is_match and raw_href.startswith("https://www.google.com/goto"):
-                        # Only resolve redirect when we need the exact final destination of target
-                        resolved = resolve_real_url(raw_href)
-                        if resolved:
-                            real_url = resolved
-                    elif not raw_href.startswith("http") and display_url.startswith("http"):
-                        real_url = display_url.split(" ")[0]
+                start_offset = page_idx * 10
+                params = {
+                    "q": keyword,
+                    "hl": language,
+                    "gl": gl,
+                    "start": start_offset
+                }
+                if uule:
+                    params["uule"] = uule
 
-                    result_entry = {
-                        "rank": rank_counter,
-                        "page": ((rank_counter - 1) // 10) + 1,
-                        "title": title,
-                        "url": real_url,
-                        "display_url": display_url,
-                        "snippet": snippet,
-                        "is_target": is_match
-                    }
-                    
-                    extracted_results.append(result_entry)
-                    
-                    if is_match and not target_found:
-                        target_found = True
-                        target_rank = rank_counter
-                        matched_item = result_entry
-                        
-                    rank_counter += 1
+                search_url = f"https://www.google.com/search?{urllib.parse.urlencode(params)}"
+                
+                try:
+                    driver.get(search_url)
                 except Exception:
-                    continue
+                    try:
+                        driver.execute_script("window.stop();")
+                    except Exception:
+                        pass
+                        
+                time.sleep(1.5)
+                
+                # Dismiss cookie banner on first page if present
+                if page_idx == 0:
+                    consent_buttons = driver.find_elements(
+                        By.XPATH,
+                        "//button[contains(., 'Accept all') or contains(., 'I agree') or contains(., 'Accept')]"
+                    )
+                    if consent_buttons:
+                        try:
+                            consent_buttons[0].click()
+                            time.sleep(1)
+                        except Exception:
+                            pass
+
+                # Locate organic search result cards
+                containers = driver.find_elements(
+                    By.CSS_SELECTOR,
+                    "div.tF2Cxc, div.MjjYud div.yuRUbf, div.g, div[data-sokoban-container]"
+                )
+                
+                page_extracted_count = 0
+                
+                for c in containers:
+                    if rank_counter > max_results:
+                        break
+                        
+                    try:
+                        h3_elements = c.find_elements(By.TAG_NAME, "h3")
+                        if not h3_elements:
+                            continue
+                        title = h3_elements[0].text.strip()
+                        if not title:
+                            continue
+                            
+                        cite_elements = c.find_elements(By.TAG_NAME, "cite")
+                        display_url = cite_elements[0].text.strip() if cite_elements else ""
+                        
+                        a_elements = c.find_elements(By.TAG_NAME, "a")
+                        raw_href = a_elements[0].get_attribute("href") if a_elements else ""
+                        
+                        # Deduplicate by title + display_url
+                        item_id = f"{title}_{display_url}"
+                        if item_id in seen_identifiers:
+                            continue
+                        seen_identifiers.add(item_id)
+                        
+                        # Description snippet
+                        snippet = ""
+                        snippet_elems = c.find_elements(
+                            By.CSS_SELECTOR,
+                            "div.VwiC3b, div[data-sncf], span.aCOpRe"
+                        )
+                        if snippet_elems:
+                            snippet = snippet_elems[0].text.strip()
+                            
+                        # Target match test
+                        is_match = is_target_match(target_website, raw_href, display_url)
+                        
+                        real_url = raw_href
+                        if is_match and raw_href.startswith("https://www.google.com/goto"):
+                            resolved = resolve_real_url(raw_href)
+                            if resolved:
+                                real_url = resolved
+                        elif not raw_href.startswith("http") and display_url.startswith("http"):
+                            real_url = display_url.split(" ")[0]
+
+                        result_entry = {
+                            "rank": rank_counter,
+                            "page": page_idx + 1,
+                            "title": title,
+                            "url": real_url,
+                            "display_url": display_url,
+                            "snippet": snippet,
+                            "is_target": is_match
+                        }
+                        
+                        extracted_results.append(result_entry)
+                        
+                        if is_match:
+                            all_target_matches.append(result_entry)
+                            
+                        rank_counter += 1
+                        page_extracted_count += 1
+                    except Exception:
+                        continue
+                        
+                # If a page returned 0 new results, we reached the end of Google SERP
+                if page_extracted_count == 0:
+                    break
 
         except Exception as e:
             return {
@@ -340,6 +326,8 @@ class GoogleRankTracker:
                     pass
 
         duration = round(time.time() - start_time, 2)
+        target_found = len(all_target_matches) > 0
+        best_match = all_target_matches[0] if target_found else None
         
         return {
             "success": True,
@@ -348,12 +336,14 @@ class GoogleRankTracker:
             "country_code": gl,
             "target_website": target_website,
             "target_found": target_found,
-            "rank": target_rank,
-            "page": ((target_rank - 1) // 10) + 1 if target_rank else None,
-            "matched_item": matched_item,
+            "rank": best_match["rank"] if best_match else None,
+            "page": best_match["page"] if best_match else None,
+            "appearances_count": len(all_target_matches),
+            "all_appearances": all_target_matches,
+            "matched_item": best_match,
             "total_extracted": len(extracted_results),
             "max_checked": max_results,
+            "pages_scanned": page_idx + 1 if 'page_idx' in locals() else 1,
             "duration_seconds": duration,
-            "search_url": search_url,
             "results": extracted_results
         }
