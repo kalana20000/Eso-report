@@ -1,0 +1,20 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Databases
+rank_tracker.db
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
