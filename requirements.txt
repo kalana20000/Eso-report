@@ -1,5 +1,6 @@
 # Core Web Framework
 Flask>=3.1.0
+gunicorn>=21.2.0
 Werkzeug>=3.1.0
 Jinja2>=3.1.0
 click>=8.1.0

@@ -3,6 +3,7 @@ FROM python:3.11-slim
 # Prevent Python from writing .pyc files & enable unbuffered stdout
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PORT=5000
 
 # Install system dependencies & Google Chrome
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -47,11 +48,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Google Chrome stable
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
+# Install Google Chrome stable using modern gpg keyring
+RUN mkdir -p /etc/apt/keyrings \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg \
+    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
     && apt-get update \
-    && apt-get install -y google-chrome-stable \
+    && apt-get install -y --no-install-recommends google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -66,4 +68,5 @@ COPY . /app/
 
 EXPOSE 5000
 
+# Run Flask app (reads $PORT dynamically from cloud platform or defaults to 5000)
 CMD ["python", "app.py"]
